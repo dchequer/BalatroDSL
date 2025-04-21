@@ -1,0 +1,54 @@
+﻿COMPILER Balatro
+
+using System;
+using BalatroDSL.Models;
+
+public Hand currentHand; 
+
+void AddCardToHand(string cardText) {
+    string rank = cardText.Substring(0, cardText.Length - 1);
+    char suitChar = cardText[cardText.Length - 1];
+
+    Suit suit = suitChar switch {
+        'H' => Suit.Hearts,
+        'D' => Suit.Diamonds,
+        'S' => Suit.Spades,
+        'C' => Suit.Clubs,
+        _ => throw new Exception("Invalid suit")
+    };
+
+    var card = new Card {
+        Rank = rank,
+        Suit = suit
+    };
+
+    currentHand.Cards.Add(card);
+}
+
+CHARACTERS
+  digit     = '0'..'9'.
+  letter    = 'A'..'Z' + 'a'..'z'.
+  tab       = '\t'.
+  cr        = '\r'.
+  lf        = '\n'.
+
+TOKENS
+  card      = digit 
+  ident     = letter {letter | digit}.
+
+IGNORE tab + cr + lf + ' '
+
+PRODUCTIONS
+
+  Balatro =
+    "hand" { currentHand = new Hand(); }
+    "{" Cards "}" .
+
+  Cards =
+    "cards:" "[" CardList "]" .
+
+  CardList =
+    card <out string cardVal> { AddCardToHand(cardVal); }
+    { "," card <out string moreCardVal> { AddCardToHand(moreCardVal); } } .
+
+END Balatro.
