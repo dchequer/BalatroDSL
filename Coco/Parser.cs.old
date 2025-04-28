@@ -26,7 +26,8 @@ public class Parser {
 public Hand currentHand;
 int cardCounter = 0;
 
-void AddCardToHand(string cardText) {
+void AddCardToHand(string cardText) 
+{
     string rankStr = cardText.Substring(0, cardText.Length - 2);
     char suitChar = cardText[cardText.Length - 2];
     char modChar = cardText[cardText.Length - 1];
@@ -77,60 +78,112 @@ void AddCardToHand(string cardText) {
 
 void AddJokerToHand(string text)
 {
-    if (string.IsNullOrWhiteSpace(text) || text.Length < 3)
-        throw new Exception("Invalid joker format.");
+    if (string.IsNullOrWhiteSpace(text) || text.Length < 2)
+        throw new Exception("Invalid Joker input.");
+
+    text = text.ToUpperInvariant();
 
     var joker = new Joker();
 
-    // Parse modifier
+    // Step 1: Modifier
     joker.Modifier = text[0] switch
     {
         'N' => JokerModifier.None,
         'F' => JokerModifier.Foil,
         'H' => JokerModifier.Holographic,
         'P' => JokerModifier.Polychrome,
-        _ => throw new Exception("Invalid joker modifier.")
+        _ => throw new Exception("Invalid Joker Modifier.")
     };
 
-    // Parse type
-    joker.Type = text[1] switch
-    {
-        'A' => JokerType.AdditiveMult,
-        'M' => JokerType.Multiplicative,
-        'C' => JokerType.ChipsAndAdditive,
-        'R' => JokerType.Retrigger,
-        _ => throw new Exception("Invalid joker type.")
-    };
+    // Step 2: Type
+    char typeLetter = text[1];
+    var rest = text.Substring(2); // all after modifier and type
 
-    // Parse rest
-    var rest = text.Substring(2);
+    switch (typeLetter)
+    {
+        case 'A':
+            joker.Type = JokerType.AdditiveMult;
+            joker.EffectValue1 = ParseSingleValue(rest);
+            break;
 
-    if (joker.Type == JokerType.AdditiveMult || joker.Type == JokerType.Multiplicative)
-    {
-        joker.EffectValue1 = int.Parse(rest);
-    }
-    else if (joker.Type == JokerType.ChipsAndAdditive)
-    {
-        var parts = rest.Split('_');
-        if (parts.Length != 2)
-            throw new Exception("Invalid Chips&Additive Joker format. Expected two numeric values separated by '_'.");
-        joker.EffectValue1 = int.Parse(parts[0]); // chips
-        joker.EffectValue2 = int.Parse(parts[1]); // multiplier
-    }
-    else if (joker.Type == JokerType.Retrigger)
-    {
-        var match = System.Text.RegularExpressions.Regex.Match(rest, @"^(\d+)?([A-Za-z0-9]*)$");
-        if (match.Success)
-        {
-            if (!string.IsNullOrEmpty(match.Groups[1].Value))
-                joker.EffectValue1 = int.Parse(match.Groups[1].Value);
+        case 'M':
+            joker.Type = JokerType.Multiplicative;
+            joker.EffectValue1 = ParseSingleValue(rest);
+            break;
 
-            if (!string.IsNullOrEmpty(match.Groups[2].Value))
-                joker.TriggerTarget = match.Groups[2].Value;
-        }
+        case 'C':
+            joker.Type = JokerType.ChipsAndAdditive;
+            ParseTwoValues(rest, out int chips, out int mult);
+            joker.EffectValue1 = chips;
+            joker.EffectValue2 = mult;
+            break;
+
+        case 'T':
+            joker.Type = JokerType.Trigger;
+            ParseTriggerJoker(rest, joker);
+            break;
+
+        default:
+            throw new Exception("Invalid Joker Type Letter.");
     }
 
     currentHand.Jokers.Add(joker);
+}
+
+int ParseSingleValue(string text)
+{
+    if (int.TryParse(text, out int value))
+        return value;
+
+    throw new Exception("Expected numeric value for Joker.");
+}
+
+void ParseTwoValues(string text, out int first, out int second)
+{
+    var parts = text.Split('_');
+    if (parts.Length != 2)
+        throw new Exception("Expected two values separated by '_'.");
+
+    if (!int.TryParse(parts[0], out first) || !int.TryParse(parts[1], out second))
+        throw new Exception("Invalid numeric values for Chips&Mult Joker.");
+}
+
+void ParseTriggerJoker(string text, Joker joker)
+{
+    if (string.IsNullOrEmpty(text))
+        throw new Exception("Trigger Joker must specify target ranks.");
+
+    if (text.Length >= 2 && (text[0] == 'A' || text[0] == 'M' || text[0] == 'C'))
+    {
+        // Explicit effect specified
+        char effectType = text[0];
+        var parts = text.Substring(1).Split('_');
+
+        if (parts.Length != 2)
+            throw new Exception("Expected '_' separator between value and target.");
+
+        if (!int.TryParse(parts[0], out int value))
+            throw new Exception("Invalid numeric effect value.");
+
+        joker.EffectValue1 = value;
+        joker.TriggerMode = JokerTriggerMode.AddEffectOnTrigger;
+        joker.TriggerEffect = effectType switch
+        {
+            'A' => JokerTriggerEffect.AddMult,
+            'M' => JokerTriggerEffect.MultiplyMult,
+            'C' => JokerTriggerEffect.AddChips,
+            _ => throw new Exception("Unknown trigger effect type.")
+        };
+
+        joker.TriggerTarget = parts[1];
+    }
+    else
+    {
+        // No explicit effect => simple replay trigger
+        joker.TriggerMode = JokerTriggerMode.ReplayCard;
+        joker.TriggerEffect = JokerTriggerEffect.None;
+        joker.TriggerTarget = text;
+    }
 }
 
 
