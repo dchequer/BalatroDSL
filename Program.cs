@@ -20,7 +20,7 @@ class Program
 
             try
             {
-                var scanner = new Scanner(new MemoryStream(Encoding.UTF8.GetBytes(expression)));
+                var scanner = new Scanner(new MemoryStream(Encoding.UTF8.GetBytes(expression.ToUpper())));
                 var parser = new Parser(scanner);
                 parser.Parse();
 

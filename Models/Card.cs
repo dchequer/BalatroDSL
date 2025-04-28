@@ -70,7 +70,7 @@ namespace BalatroDSL.Models
     {
         AdditiveMult,
         Multiplicative,
-        ChipAndAdditive,
+        ChipsAndAdditive,
         Retrigger
     }
 
@@ -78,9 +78,34 @@ namespace BalatroDSL.Models
     {
         public JokerModifier Modifier { get; set; }
         public JokerType Type { get; set; }
-        public int EffectValue { get; set; } // e.g., x2 → 2
-        public override string ToString() =>
-            $"Joker: {Type} [{Modifier}] with effect value {EffectValue}" +
-            (Modifier != JokerModifier.None ? $" [{Modifier}]" : "");
+        public int EffectValue1 { get; set; } // First value (chips or mult)
+        public int? EffectValue2 { get; set; } // Optional second value (for Chips&Mult)
+        public string? TriggerTarget { get; set; } // Optional trigger target (like "3", "JQK")
+        public override string ToString()
+        {
+            var desc = $"Joker: {Type} [{Modifier}] with effect {EffectValue1}";
+            if (EffectValue2.HasValue)
+                desc += $" & {EffectValue2}";
+            if (!string.IsNullOrEmpty(TriggerTarget))
+                desc += $" Trigger: {TriggerTarget}";
+            return desc;
+        }
+
+        public string ToASTString()
+        {
+            var desc = $"[{Modifier}] {Type}";
+
+            if (EffectValue1 != 0)
+                desc += $" {EffectValue1}";
+
+            if (EffectValue2.HasValue)
+                desc += $" / {EffectValue2.Value}";
+
+            if (!string.IsNullOrEmpty(TriggerTarget))
+                desc += $" (Trigger: {TriggerTarget})";
+
+            return desc;
+        }
+
     }
 }

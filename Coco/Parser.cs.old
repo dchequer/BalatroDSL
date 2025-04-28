@@ -75,36 +75,60 @@ void AddCardToHand(string cardText) {
     currentHand.Cards.Add(card);
 }
 
-void AddJokerToHand(string jokerText) {
-    char modChar = jokerText[0];
-    char typeChar = jokerText[1];
-    string effectStr = jokerText.Substring(2);
+void AddJokerToHand(string text)
+{
+    if (string.IsNullOrWhiteSpace(text) || text.Length < 3)
+        throw new Exception("Invalid joker format.");
 
-    var modifier = modChar switch {
+    var joker = new Joker();
+
+    // Parse modifier
+    joker.Modifier = text[0] switch
+    {
         'N' => JokerModifier.None,
         'F' => JokerModifier.Foil,
         'H' => JokerModifier.Holographic,
         'P' => JokerModifier.Polychrome,
-        _ => throw new Exception("Invalid joker modifier")
+        _ => throw new Exception("Invalid joker modifier.")
     };
 
-    var type = typeChar switch {
+    // Parse type
+    joker.Type = text[1] switch
+    {
         'A' => JokerType.AdditiveMult,
         'M' => JokerType.Multiplicative,
-        'C' => JokerType.ChipAndAdditive,
+        'C' => JokerType.ChipsAndAdditive,
         'R' => JokerType.Retrigger,
-        _ => throw new Exception("Invalid joker type")
+        _ => throw new Exception("Invalid joker type.")
     };
 
-    if (!int.TryParse(effectStr, out int effectValue)) {
-        throw new Exception("Invalid joker effect value");
+    // Parse rest
+    var rest = text.Substring(2);
+
+    if (joker.Type == JokerType.AdditiveMult || joker.Type == JokerType.Multiplicative)
+    {
+        joker.EffectValue1 = int.Parse(rest);
     }
+    else if (joker.Type == JokerType.ChipsAndAdditive)
+    {
+        var parts = rest.Split('_');
+        if (parts.Length != 2)
+            throw new Exception("Invalid Chips&Additive Joker format. Expected two numeric values separated by '_'.");
+        joker.EffectValue1 = int.Parse(parts[0]); // chips
+        joker.EffectValue2 = int.Parse(parts[1]); // multiplier
+    }
+    else if (joker.Type == JokerType.Retrigger)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(rest, @"^(\d+)?([A-Za-z0-9]*)$");
+        if (match.Success)
+        {
+            if (!string.IsNullOrEmpty(match.Groups[1].Value))
+                joker.EffectValue1 = int.Parse(match.Groups[1].Value);
 
-    var joker = new Joker {
-        Modifier = modifier,
-        Type = type,
-        EffectValue = (int) effectValue
-    };
+            if (!string.IsNullOrEmpty(match.Groups[2].Value))
+                joker.TriggerTarget = match.Groups[2].Value;
+        }
+    }
 
     currentHand.Jokers.Add(joker);
 }

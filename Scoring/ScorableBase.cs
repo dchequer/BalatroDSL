@@ -52,11 +52,74 @@ namespace BalatroDSL.Scoring
                         break;
                 }
 
+                // apply joker triggers
+                foreach (var j in hand.Jokers)
+                {
+                    if (!string.IsNullOrEmpty(j.TriggerTarget) && j.TriggerTarget.Contains((char)card.Rank))
+                    {
+                        switch (j.Modifier)
+                        {
+                            case JokerModifier.Foil:
+                                chips += 50;
+                                cardNode.AddChild(new ASTNode($"+50 Chips from Foil Joker"));
+                                break;
+                            case JokerModifier.Holographic:
+                                mult += 10;
+                                cardNode.AddChild(new ASTNode($"+10 Mult from Joker"));
+                                break;
+                            case JokerModifier.Polychrome:
+                                mult = (int)((double)mult * 1.5);
+                                cardNode.AddChild(new ASTNode($"x1.5 Mult from Joker"));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+
                 cardNode.AddChild(new ASTNode($"Current Score: {chips} x {mult}"));
                 root.AddChild(cardNode);
-
             }
 
+            // apply joker effects
+            foreach (var j in hand.Jokers.Where(c => c.Type != JokerType.Retrigger).ToList())
+            {
+                var jokerNode = new ASTNode(j.ToASTString());
+                switch (j.Type)
+                {
+                    case JokerType.ChipsAndAdditive:
+                        if (j.EffectValue1 > 0)
+                        {
+                            chips += j.EffectValue1;
+                            jokerNode.AddChild(new ASTNode($"+{j.EffectValue1} Chips from Joker"));
+                        }
+                        if (j.EffectValue2 > 0)
+                        {
+                            mult += j.EffectValue2.Value;
+                            jokerNode.AddChild(new ASTNode($"+{j.EffectValue2.Value} Mult from Joker"));
+                        }
+                        break;
+                    case JokerType.AdditiveMult:
+                        if (j.EffectValue1 > 0)
+                        {
+                            mult += j.EffectValue1;
+                            jokerNode.AddChild(new ASTNode($"+{j.EffectValue1} Mult from Joker"));
+                        }
+                        break;
+                    case JokerType.Multiplicative:
+                        if (j.EffectValue1 > 0)
+                        {
+                            mult *= j.EffectValue1;
+                            jokerNode.AddChild(new ASTNode($"x{j.EffectValue1} Mult from Joker"));
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                jokerNode.AddChild(new ASTNode($"Current Score: {chips} x {mult}"));
+                root.AddChild(jokerNode);
+            }
             root.AddChild(new ASTNode($"Final Score: {chips * mult}"));
 
             // update hand with final chips and mult

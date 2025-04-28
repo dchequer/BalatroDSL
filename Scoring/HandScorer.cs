@@ -37,7 +37,7 @@ namespace BalatroDSL.Scoring
             if (hand.Jokers.Any())
             {
                 foreach (var j in hand.Jokers)
-                    jokerNode.AddChild(new ASTNode($"{j.Modifier} ({j.Type}, {j.EffectValue})"));
+                    jokerNode.AddChild(new ASTNode(j.ToASTString()));
             }
             else
             {

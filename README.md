@@ -36,7 +36,7 @@ Currently, the grammar supports the definition of a hand with **cards only**.
 
 
 ### Supported Joker Format
-- Jokers must be written as: [Mod][Type][EffectValue]
+- Jokers must be written as: [Modifier][Type][EffectValue][_OptionalSecondEffectValue][OptionalTarget]
 
 - Valid Joker Modifiers: N (Normal), F (Foil), H (Holographic), P (Polychrome)
 
