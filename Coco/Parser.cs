@@ -1,3 +1,6 @@
+using BalatroDSL.Models;
+
+
 
 using System;
 
@@ -6,8 +9,8 @@ using System;
 public class Parser {
 	public const int _EOF = 0;
 	public const int _card = 1;
-	public const int _ident = 2;
-	public const int maxT = 10;
+	public const int _joker = 2;
+	public const int maxT = 4;
 
 	const bool _T = true;
 	const bool _x = false;
@@ -19,6 +22,93 @@ public class Parser {
 	public Token t;    // last recognized token
 	public Token la;   // lookahead token
 	int errDist = minErrDist;
+
+public Hand currentHand;
+int cardCounter = 0;
+
+void AddCardToHand(string cardText) {
+    string rankStr = cardText.Substring(0, cardText.Length - 2);
+    char suitChar = cardText[cardText.Length - 2];
+    char modChar = cardText[cardText.Length - 1];
+
+    Rank rank = rankStr switch
+    {
+        "2" => Rank.Two,
+        "3" => Rank.Three,
+        "4" => Rank.Four,
+        "5" => Rank.Five,
+        "6" => Rank.Six,
+        "7" => Rank.Seven,
+        "8" => Rank.Eight,
+        "9" => Rank.Nine,
+        "10" => Rank.Ten,
+        "J" => Rank.Jack,
+        "Q" => Rank.Queen,
+        "K" => Rank.King,
+        "A" => Rank.Ace,
+        _ => throw new Exception("Invalid rank")
+    };
+
+    Suit suit = suitChar switch {
+        'H' => Suit.Hearts,
+        'D' => Suit.Diamonds,
+        'S' => Suit.Spades,
+        'C' => Suit.Clubs,
+        _ => throw new Exception("Invalid suit")
+    };
+
+    CardModifier modifier = modChar switch {
+        'N' => CardModifier.None,
+        'B' => CardModifier.Bonus,
+        'M' => CardModifier.Mult,
+        'G' => CardModifier.Glass,
+        _ => throw new Exception("Invalid card modifier")
+    };
+
+    var card = new Card {
+        Rank = rank,
+        Suit = suit,
+        Modifier = modifier,
+        OriginalIndex = cardCounter++,
+    };
+
+    currentHand.Cards.Add(card);
+}
+
+void AddJokerToHand(string jokerText) {
+    char modChar = jokerText[0];
+    char typeChar = jokerText[1];
+    string effectStr = jokerText.Substring(2);
+
+    var modifier = modChar switch {
+        'N' => JokerModifier.None,
+        'F' => JokerModifier.Foil,
+        'H' => JokerModifier.Holographic,
+        'P' => JokerModifier.Polychrome,
+        _ => throw new Exception("Invalid joker modifier")
+    };
+
+    var type = typeChar switch {
+        'A' => JokerType.AdditiveMult,
+        'M' => JokerType.Multiplicative,
+        'C' => JokerType.ChipAndAdditive,
+        'R' => JokerType.Retrigger,
+        _ => throw new Exception("Invalid joker type")
+    };
+
+    if (!int.TryParse(effectStr, out int effectValue)) {
+        throw new Exception("Invalid joker effect value");
+    }
+
+    var joker = new Joker {
+        Modifier = modifier,
+        Type = type,
+        EffectValue = (int) effectValue
+    };
+
+    currentHand.Jokers.Add(joker);
+}
+
 
 
 
@@ -80,29 +170,26 @@ public class Parser {
 
 	
 	void Balatro() {
-		Hand();
+		currentHand = new Hand(); 
+		ParseHand();
 	}
 
-	void Hand() {
-		Expect(3);
-		Expect(4);
-		Cards();
-		Expect(5);
-	}
-
-	void Cards() {
-		Expect(6);
-		Expect(7);
-		CardList();
-		Expect(8);
-	}
-
-	void CardList() {
-		Expect(1);
-		while (la.kind == 9) {
+	void ParseHand() {
+		Entry();
+		while (la.kind == 3) {
 			Get();
-			Expect(1);
+			Entry();
 		}
+	}
+
+	void Entry() {
+		if (la.kind == 1) {
+			Get();
+			AddCardToHand(t.val); 
+		} else if (la.kind == 2) {
+			Get();
+			AddJokerToHand(t.val); 
+		} else SynErr(5);
 	}
 
 
@@ -117,7 +204,7 @@ public class Parser {
 	}
 	
 	static readonly bool[,] set = {
-		{_T,_x,_x,_x, _x,_x,_x,_x, _x,_x,_x,_x}
+		{_T,_x,_x,_x, _x,_x}
 
 	};
 } // end Parser
@@ -133,15 +220,10 @@ public class Errors {
 		switch (n) {
 			case 0: s = "EOF expected"; break;
 			case 1: s = "card expected"; break;
-			case 2: s = "ident expected"; break;
-			case 3: s = "\"hand\" expected"; break;
-			case 4: s = "\"{\" expected"; break;
-			case 5: s = "\"}\" expected"; break;
-			case 6: s = "\"cards:\" expected"; break;
-			case 7: s = "\"[\" expected"; break;
-			case 8: s = "\"]\" expected"; break;
-			case 9: s = "\",\" expected"; break;
-			case 10: s = "??? expected"; break;
+			case 2: s = "joker expected"; break;
+			case 3: s = "\",\" expected"; break;
+			case 4: s = "??? expected"; break;
+			case 5: s = "invalid Entry"; break;
 
 			default: s = "error " + n; break;
 		}

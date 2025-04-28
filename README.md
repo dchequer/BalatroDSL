@@ -20,22 +20,26 @@ Currently, the grammar supports the definition of a hand with **cards only**.
 
 ### Valid Input Example:
 ```txt
-hand {
-  cards: [2H, 3D, 5S, 9C, KH]
-}
-
-### Invalid Input Example:
-```txt
-hand {
-  cards: [2H, 3D, ZZ]    // 'ZZ' is not a valid card
-}
-
-hand cards: [2H, 3D, 5S]  // Missing opening/closing braces
+2HN, 3DG, 5SP, 9CM, KHN // 2 of Hearts [Normal], 3 of Diamonds [Gold], 5 of Spades [Polychrome], 9 of Clubs [Mult], King of Hearts [Normal]
 ```
 
+
+
 ### Supported Card Format
-- Cards must be written as: [Rank][Suit]
+- Cards must be written as: [Rank][Suit][Mod]
 
 - Valid ranks: 2–10, J, Q, K, A
 
 - Valid suits: H (Hearts), D (Diamonds), S (Spades), C (Clubs)
+
+- Valid card modifiers: N (Normal), B (Bonus), M (Mult), G (Glass)
+
+
+### Supported Joker Format
+- Jokers must be written as: [Mod][Type][EffectValue]
+
+- Valid Joker Modifiers: N (Normal), F (Foil), H (Holographic), P (Polychrome)
+
+- Valid Joker Types: A (Additive), M (Multiplicative), C (Chips&Additive), R (Retrigger)
+
+- EffectValue must be a number, i.e. 2, 4, 9, 50, etc.

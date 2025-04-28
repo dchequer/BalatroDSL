@@ -1,13 +1,32 @@
-﻿COMPILER Balatro
+﻿using BalatroDSL.Models;
 
-using System;
-using BalatroDSL.Models;
+COMPILER Balatro
 
-public Hand currentHand; 
+public Hand currentHand;
+int cardCounter = 0;
 
 void AddCardToHand(string cardText) {
-    string rank = cardText.Substring(0, cardText.Length - 1);
-    char suitChar = cardText[cardText.Length - 1];
+    string rankStr = cardText.Substring(0, cardText.Length - 2);
+    char suitChar = cardText[cardText.Length - 2];
+    char modChar = cardText[cardText.Length - 1];
+
+    Rank rank = rankStr switch
+    {
+        "2" => Rank.Two,
+        "3" => Rank.Three,
+        "4" => Rank.Four,
+        "5" => Rank.Five,
+        "6" => Rank.Six,
+        "7" => Rank.Seven,
+        "8" => Rank.Eight,
+        "9" => Rank.Nine,
+        "10" => Rank.Ten,
+        "J" => Rank.Jack,
+        "Q" => Rank.Queen,
+        "K" => Rank.King,
+        "A" => Rank.Ace,
+        _ => throw new Exception("Invalid rank")
+    };
 
     Suit suit = suitChar switch {
         'H' => Suit.Hearts,
@@ -17,38 +36,92 @@ void AddCardToHand(string cardText) {
         _ => throw new Exception("Invalid suit")
     };
 
+    CardModifier modifier = modChar switch {
+        'N' => CardModifier.None,
+        'B' => CardModifier.Bonus,
+        'M' => CardModifier.Mult,
+        'G' => CardModifier.Glass,
+        _ => throw new Exception("Invalid card modifier")
+    };
+
     var card = new Card {
         Rank = rank,
-        Suit = suit
+        Suit = suit,
+        Modifier = modifier,
+        OriginalIndex = cardCounter++,
     };
 
     currentHand.Cards.Add(card);
 }
 
+void AddJokerToHand(string jokerText) {
+    char modChar = jokerText[0];
+    char typeChar = jokerText[1];
+    string effectStr = jokerText.Substring(2);
+
+    var modifier = modChar switch {
+        'N' => JokerModifier.None,
+        'F' => JokerModifier.Foil,
+        'H' => JokerModifier.Holographic,
+        'P' => JokerModifier.Polychrome,
+        _ => throw new Exception("Invalid joker modifier")
+    };
+
+    var type = typeChar switch {
+        'A' => JokerType.AdditiveMult,
+        'M' => JokerType.Multiplicative,
+        'C' => JokerType.ChipAndAdditive,
+        'R' => JokerType.Retrigger,
+        _ => throw new Exception("Invalid joker type")
+    };
+
+    if (!int.TryParse(effectStr, out int effectValue)) {
+        throw new Exception("Invalid joker effect value");
+    }
+
+    var joker = new Joker {
+        Modifier = modifier,
+        Type = type,
+        EffectValue = (int) effectValue
+    };
+
+    currentHand.Jokers.Add(joker);
+}
+
+
 CHARACTERS
-  digit     = '0'..'9'.
-  letter    = 'A'..'Z' + 'a'..'z'.
-  tab       = '\t'.
-  cr        = '\r'.
-  lf        = '\n'.
+  letter	 = 'a'..'z' + 'A'..'Z' .
+  digit      = '0'..'9' .
+
+  tab        = '\t' .
+  cr         = '\r' .
+  lf         = '\n' .
 
 TOKENS
-  card      = digit 
-  ident     = letter {letter | digit}.
+  card = ("2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" | "A") // rank (2-10 J Q K A)
+         ("H" | "D" | "S" | "C")                                                        // suit (Hearts Diamonds Spades Clubs)
+         ("N" | "B" | "M" | "G") .                                                      // modifier (None Bonus Mult Glass)
+
+  joker = ("N" | "F" | "H" | "P")                                                       // modifier (None Foil Holographic Polychrome)
+          ("A" | "M" | "C" | "R")                                                       // joker type (Additive Multiplicative Chips&Additive Retrigger) 
+          ( digit {digit} )                                                             // effect value (digit)
+          [ "_" digit {digit} ]                                                         // optional second effect value (digits)]
+          [ letter {letter | digit} ] .                                                 // optional retrigger target
+
 
 IGNORE tab + cr + lf + ' '
 
 PRODUCTIONS
 
   Balatro =
-    "hand" { currentHand = new Hand(); }
-    "{" Cards "}" .
+    (. currentHand = new Hand(); .)
+    ParseHand .
 
-  Cards =
-    "cards:" "[" CardList "]" .
+  ParseHand =
+    Entry { "," Entry } .
 
-  CardList =
-    card <out string cardVal> { AddCardToHand(cardVal); }
-    { "," card <out string moreCardVal> { AddCardToHand(moreCardVal); } } .
+  Entry =
+    card (. AddCardToHand(t.val); .)
+  | joker (. AddJokerToHand(t.val); .) .
 
 END Balatro.
