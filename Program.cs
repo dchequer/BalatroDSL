@@ -52,7 +52,7 @@ class Program
                         Arguments = string.Join(" ", new[]
                         {
                             "-Tpng",
-                            "-Gdpi=300",
+                            "-Gdpi=600",
                             "-Gbgcolor=\"#1e1e1e\"",
                             "-Nfontname=\"Segoe UI\"",
                             "-Nfontsize=14",
@@ -60,6 +60,7 @@ class Program
                             "-Nfontcolor=\"#f0f0f0\"",
                             "-Nstyle=filled",
                             "-Nfillcolor=\"#2d2d2d\"",
+                            //"-rankdir=LR",
                             "-Ecolor=\"#808080\"",
                             $"score_tree.dot -o {imageFile}"
                         }),

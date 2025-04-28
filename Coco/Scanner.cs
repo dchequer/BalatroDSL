@@ -235,7 +235,7 @@ public class Scanner {
 		for (int i = 72; i <= 72; ++i) start[i] = 5;
 		for (int i = 78; i <= 78; ++i) start[i] = 5;
 		for (int i = 80; i <= 80; ++i) start[i] = 5;
-		start[44] = 11; 
+		start[44] = 6; 
 		start[Buffer.EOF] = -1;
 
 	}
@@ -341,30 +341,10 @@ public class Scanner {
 			case 4:
 				{t.kind = 1; break;}
 			case 5:
-				if (ch == 'A' || ch == 'C' || ch == 'M' || ch == 'R') {AddCh(); goto case 6;}
-				else {goto case 0;}
+				recEnd = pos; recKind = 2;
+				if (ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'Z' || ch == '_' || ch >= 'a' && ch <= 'z') {AddCh(); goto case 5;}
+				else {t.kind = 2; break;}
 			case 6:
-				if (ch >= '0' && ch <= '9') {AddCh(); goto case 7;}
-				else {goto case 0;}
-			case 7:
-				recEnd = pos; recKind = 2;
-				if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z') {AddCh(); goto case 8;}
-				else if (ch >= '0' && ch <= '9') {AddCh(); goto case 7;}
-				else if (ch == '_') {AddCh(); goto case 9;}
-				else {t.kind = 2; break;}
-			case 8:
-				recEnd = pos; recKind = 2;
-				if (ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z') {AddCh(); goto case 8;}
-				else {t.kind = 2; break;}
-			case 9:
-				if (ch >= '0' && ch <= '9') {AddCh(); goto case 10;}
-				else {goto case 0;}
-			case 10:
-				recEnd = pos; recKind = 2;
-				if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z') {AddCh(); goto case 8;}
-				else if (ch >= '0' && ch <= '9') {AddCh(); goto case 10;}
-				else {t.kind = 2; break;}
-			case 11:
 				{t.kind = 3; break;}
 
 		}

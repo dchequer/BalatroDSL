@@ -35,11 +35,23 @@ Currently, the grammar supports the definition of a hand with **cards only**.
 - Valid card modifiers: N (Normal), B (Bonus), M (Mult), G (Glass)
 
 
-### Supported Joker Format
-- Jokers must be written as: [Modifier][Type][EffectValue][_OptionalSecondEffectValue][OptionalTarget]
+### Supported Joker Format  
 
-- Valid Joker Modifiers: N (Normal), F (Foil), H (Holographic), P (Polychrome)
+#### Non-Trigger Joker Format:
+- Modifiers: N, F, H, P  
+- Type:  
+  - A = Additive (+Mult)  
+  - M = Multiplicative (×Mult)  
+  - C = Chips & Mult  
+- EffectValue: Any integer  
+- Optional EffectValue2: Only available for Chips & Mult joker  
 
-- Valid Joker Types: A (Additive), M (Multiplicative), C (Chips&Additive), R (Retrigger)
-
-- EffectValue must be a number, i.e. 2, 4, 9, 50, etc.
+#### Trigger Joker Format:
+- Modifiers: N, F, H, P  
+- Always `T` for trigger joker  
+- EffectTypeLetter (optional):  
+  - A = Additive  
+  - M = Multiplicative  
+  - C = Chips & Mult  
+- EffectValue: Any integer  
+- TriggerTarget: Card rank that should trigger this joker
